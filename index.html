@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>福利領航員 WelfarePilot｜AI 社會福利代理人</title>
+<meta name="description" content="一句話說出你的困難，AI 代理人幫你找出可申請的社會福利、把門檻算給你看、排好申請步驟。">
+<style>
+:root{
+  --bg:#1b1030;--bg2:#2a1748;--card:#ffffff;--ink:#21163a;--muted:#6b6185;
+  --pri:#f6a623;--pri2:#ff7a59;--vio:#7b4dff;--ok:#1aa36b;--warn:#e7a400;--no:#9a93ad;--danger:#e0445a;
+  --radius:18px;--fs:16px;
+}
+*{box-sizing:border-box}
+html{font-size:var(--fs)}
+body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:var(--ink);
+  background:radial-gradient(1200px 600px at 10% -10%,#4b2a86 0,transparent 60%),radial-gradient(900px 500px at 110% 10%,#6b2a5e 0,transparent 55%),var(--bg);min-height:100vh}
+body.big{--fs:20px}
+a{color:var(--vio)}
+header{color:#fff;padding:28px 20px 10px;max-width:1200px;margin:auto;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.logo{width:58px;height:58px;border-radius:16px;background:linear-gradient(135deg,var(--pri),var(--pri2));display:grid;place-items:center;font-size:30px;box-shadow:0 8px 24px #ff7a5955}
+header h1{margin:0;font-size:1.7rem;letter-spacing:.5px}
+header p{margin:4px 0 0;color:#e7dcff;font-size:.95rem}
+.hdr-tools{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.pill{border:1px solid #ffffff44;background:#ffffff14;color:#fff;border-radius:999px;padding:7px 14px;cursor:pointer;font-size:.85rem}
+.pill:hover{background:#ffffff28}
+.tabs{max-width:1200px;margin:8px auto 0;padding:0 20px;display:flex;gap:6px}
+.tab{color:#d9ccff;padding:10px 16px;border-radius:12px 12px 0 0;cursor:pointer;font-weight:600}
+.tab.on{background:#f5f2fb;color:var(--ink)}
+main{max-width:1200px;margin:0 auto 40px;padding:0 20px}
+.panel{background:#f5f2fb;border-radius:0 var(--radius) var(--radius) var(--radius);padding:20px}
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:0 4px 18px #2a174812}
+.card h2{margin:0 0 10px;font-size:1.1rem;display:flex;align-items:center;gap:8px}
+.chat{height:430px;overflow:auto;padding:6px 4px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
+.msg{max-width:88%;padding:11px 14px;border-radius:16px;line-height:1.6;white-space:pre-wrap;font-size:.97rem}
+.msg.bot{background:#f1ecff;align-self:flex-start;border-top-left-radius:4px}
+.msg.user{background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;align-self:flex-end;border-top-right-radius:4px}
+.msg.alert{background:#ffe8ec;border:2px solid var(--danger);color:#7a0f20}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{border:1px solid #cdbdff;background:#fff;color:#4a2fb0;border-radius:999px;padding:6px 12px;cursor:pointer;font-size:.88rem}
+.chip:hover{background:#efe9ff}
+.inputbar{display:flex;gap:8px;margin-top:10px}
+.inputbar textarea{flex:1;resize:none;height:64px;border:2px solid #e2dbf5;border-radius:14px;padding:10px 12px;font:inherit;font-size:.97rem}
+.inputbar textarea:focus{outline:none;border-color:var(--vio)}
+.btn{border:0;border-radius:14px;padding:0 18px;font-weight:700;cursor:pointer;font:inherit;font-weight:700}
+.btn.pri{background:linear-gradient(135deg,var(--vio),#a35cff);color:#fff}
+.btn.ghost{background:#efe9ff;color:#4a2fb0;padding:8px 14px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.demos{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.demo{background:#fff7e8;border:1px solid #ffd99a;color:#7a4b00;border-radius:12px;padding:7px 11px;cursor:pointer;font-size:.86rem}
+.demo:hover{background:#ffefcc}
+.trace{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;max-height:520px;overflow:auto}
+.step{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#faf8ff;border:1px solid #eee8fb;animation:pop .35s ease}
+.step .ic{width:30px;height:30px;flex:none;border-radius:9px;display:grid;place-items:center;font-size:16px;background:#efe9ff}
+.step b{display:block;font-size:.92rem}
+.step small{color:var(--muted);font-size:.82rem;white-space:pre-wrap;line-height:1.5}
+.step code{background:#eee8fb;border-radius:5px;padding:1px 5px;font-size:.8rem}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+.empty{color:var(--muted);font-size:.9rem;text-align:center;padding:30px 10px}
+.profile{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:6px}
+.field label{display:block;font-size:.75rem;color:var(--muted);margin-bottom:2px}
+.field input,.field select{width:100%;border:1.5px solid #e2dbf5;border-radius:10px;padding:6px 8px;font:inherit;font-size:.9rem;background:#fff}
+.field.missing input,.field.missing select{border-color:var(--warn);background:#fffaf0}
+.flags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.flag{font-size:.82rem;border-radius:999px;padding:5px 10px;border:1.5px solid #e2dbf5;cursor:pointer;user-select:none;background:#fff}
+.flag.on{background:#efe9ff;border-color:var(--vio);color:#3b1fa8;font-weight:600}
+#results{margin-top:18px;display:none}
+.sec-title{color:var(--ink);font-size:1.05rem;margin:18px 0 8px;display:flex;align-items:center;gap:8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.prog{background:#fff;border-radius:16px;padding:14px 16px;border-left:6px solid var(--no);box-shadow:0 3px 12px #2a17480d}
+.prog.likely{border-color:var(--ok)}.prog.check{border-color:var(--warn)}.prog.urgent{border-color:var(--danger)}
+.prog h3{margin:0 0 4px;font-size:1rem;display:flex;justify-content:space-between;gap:8px}
+.badge{font-size:.72rem;padding:3px 8px;border-radius:999px;white-space:nowrap;font-weight:700}
+.b-likely{background:#ddf5ea;color:#0d7a4d}.b-check{background:#fff2cc;color:#8a6200}.b-no{background:#eeecf3;color:#6b6185}.b-urgent{background:#ffe0e5;color:#a1122b}
+.prog p{margin:6px 0;font-size:.9rem;line-height:1.55}
+.calc{background:#f7f5fc;border-radius:10px;padding:7px 9px;font-size:.82rem;color:#3d3358;font-family:ui-monospace,Menlo,monospace;white-space:pre-wrap}
+.prog .how{font-size:.85rem;color:#3d3358}
+.prog details{font-size:.85rem;margin-top:4px}
+.plan{counter-reset:s;list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.plan li{background:#fff;border-radius:12px;padding:10px 12px 10px 46px;position:relative;font-size:.93rem;line-height:1.5}
+.plan li::before{counter-increment:s;content:counter(s);position:absolute;left:12px;top:10px;width:24px;height:24px;border-radius:50%;background:var(--vio);color:#fff;display:grid;place-items:center;font-size:.8rem;font-weight:700}
+.plan li.done{opacity:.55;text-decoration:line-through}
+.plan input{position:absolute;right:12px;top:12px;transform:scale(1.2)}
+.handoff{background:#fff;border-radius:14px;padding:14px;font-size:.88rem;white-space:pre-wrap;line-height:1.6;font-family:inherit;border:1px dashed #cdbdff}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ml{background:linear-gradient(135deg,#fff7e8,#fff);border:2px solid #ffd99a;border-radius:16px;padding:14px;font-size:.95rem;line-height:1.7}
+.note{font-size:.8rem;color:var(--muted);line-height:1.6;margin-top:16px}
+.settings{display:none;margin-top:10px;background:#fff;border-radius:14px;padding:12px;border:1px solid #e2dbf5}
+.settings input{width:100%;border:1.5px solid #e2dbf5;border-radius:10px;padding:7px 9px;margin:3px 0 8px;font:inherit;font-size:.88rem}
+.mode{font-size:.78rem;padding:3px 9px;border-radius:999px;background:#ddf5ea;color:#0d7a4d;font-weight:700}
+.about h3{margin:18px 0 6px}
+.about p,.about li{line-height:1.75;font-size:.95rem}
+.arch{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.arch span{background:#fff;border:2px solid #cdbdff;border-radius:12px;padding:8px 12px;font-weight:700;font-size:.88rem}
+.arch i{color:var(--vio);font-style:normal;font-weight:900}
+table{border-collapse:collapse;width:100%;font-size:.88rem;background:#fff;border-radius:12px;overflow:hidden}
+th,td{border-bottom:1px solid #eee8fb;padding:7px 9px;text-align:left}
+th{background:#efe9ff}
+footer{color:#cbbdf0;text-align:center;font-size:.8rem;padding:10px 20px 30px}
+@media print{body{background:#fff}header,.tabs,.inputbar,.demos,.hdr-tools,#traceCard,.btn,footer{display:none!important}.panel{padding:0}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🧭</div>
+  <div>
+    <h1>福利領航員 WelfarePilot</h1>
+    <p>一句話說出你的困難，AI 代理人幫你找出可申請的社會福利、把門檻算給你看、排好下一步。</p>
+  </div>
+  <div class="hdr-tools">
+    <button class="pill" id="bigBtn" title="長輩友善大字模式">🔠 大字模式</button>
+    <button class="pill" id="setBtn">⚙️ AI 引擎設定</button>
+  </div>
+</header>
+<div class="tabs">
+  <div class="tab on" data-tab="app">🤖 體驗代理人</div>
+  <div class="tab" data-tab="about">📘 設計說明</div>
+</div>
+<main>
+<section class="panel" id="tab-app">
+  <div class="settings" id="settings">
+    <b>AI 引擎（選用）</b> <span class="mode" id="modeBadge">目前：本機規則引擎（免金鑰、資料不外傳）</span>
+    <div style="font-size:.82rem;color:var(--muted);margin:6px 0">不填也能完整使用。填入 OpenAI 相容 API Key 後，代理人會改用大型語言模型理解口語／多語輸入，並用更自然的語氣回覆；福利門檻計算仍由下方「規則工具」負責，避免 AI 幻覺。金鑰只存在你的瀏覽器記憶體，重新整理即清除。</div>
+    <label>API Base URL</label><input id="apiBase" value="https://api.openai.com/v1">
+    <label>Model</label><input id="apiModel" value="gpt-4o-mini">
+    <label>API Key</label><input id="apiKey" type="password" placeholder="sk-...（選填）">
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h2>💬 跟領航員說說你的狀況</h2>
+      <div class="demos" id="demos"></div>
+      <div class="chat" id="chat"></div>
+      <div class="inputbar">
+        <textarea id="inp" placeholder="例：我住新北，單親帶兩個小孩，月薪大約兩萬八，房子是租的……（中文、English 都可以）"></textarea>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn pri" id="send" style="flex:1">送出</button>
+          <button class="btn ghost" id="mic" title="語音輸入">🎤</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="traceCard">
+      <h2>🧠 代理人思考軌跡 <span style="font-size:.75rem;color:var(--muted);font-weight:400">感知 → 安全 → 規劃 → 工具 → 反思</span></h2>
+      <ul class="trace" id="trace"><li class="empty">送出一段描述後，這裡會即時顯示代理人每一步在做什麼、呼叫了哪些工具、為什麼這樣判斷。</li></ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <h2>🗂️ 個案檔（代理人整理，可直接修改） <button class="btn ghost" id="rerun" style="margin-left:auto">↻ 依修改重新評估</button></h2>
+    <div class="profile" id="profile"></div>
+    <div class="flags" id="flags"></div>
+  </div>
+
+  <div id="results">
+    <h3 class="sec-title">🎯 評估結果</h3>
+    <div id="summary" class="card" style="line-height:1.7"></div>
+    <div class="cards" id="cards" style="margin-top:12px"></div>
+    <details style="margin-top:10px"><summary style="cursor:pointer;color:var(--muted)">查看目前不符合／不適用的項目（附原因）</summary><div class="cards" id="cardsNo" style="margin-top:10px"></div></details>
+
+    <h3 class="sec-title">🪜 你的行動清單 <span class="row" style="margin-left:auto"><button class="btn ghost" id="speak">🔊 朗讀</button><button class="btn ghost" id="dl">⬇️ 下載</button><button class="btn ghost" onclick="window.print()">🖨️ 列印</button></span></h3>
+    <ol class="plan" id="plan"></ol>
+
+    <h3 class="sec-title">🌏 多語福利卡 <select id="lang" style="margin-left:8px;font:inherit;border-radius:8px;padding:3px 6px"><option value="zh">繁體中文</option><option value="en">English</option><option value="vi">Tiếng Việt</option><option value="id">Bahasa Indonesia</option></select></h3>
+    <div class="ml" id="mlcard"></div>
+
+    <h3 class="sec-title">📝 社工交接摘要 <button class="btn ghost" id="copyHO" style="margin-left:auto">📋 複製</button></h3>
+    <div class="handoff" id="handoff"></div>
+  </div>
+  <p class="note">⚠️ 本工具為競賽原型，僅提供初步篩選與申請導引，不是正式審核結果；實際資格以各主管機關審查為準。門檻資料來源：衛生福利部「115年度低收入戶、中低收入戶資格審核標準」、內政部國土管理署「115年300億元中央擴大租金補貼」公告、教育部大專校院弱勢學生助學計畫等。🔒 隱私：在本機規則模式下，你輸入的所有內容只在瀏覽器裡處理，不會上傳任何伺服器。</p>
+</section>
+
+<section class="panel about" id="tab-about" style="display:none">
+  <div class="card">
+    <h2>📘 作品說明：福利領航員 WelfarePilot</h2>
+    <h3>一、問題：福利不是沒有，是「找不到、看不懂、不敢問」</h3>
+    <p>臺灣的社會福利項目多達上百種，但資訊散落在衛福部、內政部、勞動部、教育部與各縣市網站，門檻用「平均每人每月所得」「最低生活費 1.5 倍」這類行政語言寫成。最需要幫助的人──獨居長者、新住民、單親家長、突然失業的人──往往最沒有時間與能力去研究。結果是：有資格的人沒申請，社工第一線則花大量時間重複問同樣的基本問題。</p>
+    <h3>二、解法：一個會「追問、計算、規劃、交接」的 AI 代理人</h3>
+    <div class="arch"><span>👂 感知<br><small>口語→結構化個案檔</small></span><i>→</i><span>🛡️ 安全護欄<br><small>危機字詞優先轉介</small></span><i>→</i><span>🧩 規劃<br><small>缺資料就追問</small></span><i>→</i><span>🛠️ 工具<br><small>門檻計算／福利比對／文件清單</small></span><i>→</i><span>🔍 反思<br><small>自我檢查與信心標示</small></span><i>→</i><span>📤 輸出<br><small>行動清單・多語卡・社工摘要</small></span></div>
+    <ul>
+      <li><b>不是聊天機器人，是代理人：</b>它有目標（幫使用者找到可申請的福利並走到下一步）、會自己判斷還缺什麼資料而主動追問、會呼叫工具計算，最後交付可執行的成果。</li>
+      <li><b>計算交給規則、理解交給 AI：</b>福利資格牽涉金額門檻，用語言模型「猜」容易出錯。本作品讓 AI 負責理解口語與多語輸入，資格判斷則由內建 115 年官方門檻的規則工具計算，每一張結果卡都把算式攤開給使用者看。</li>
+      <li><b>可解釋：</b>右側「思考軌跡」逐步顯示代理人做了什麼、為什麼；個案檔可直接修改後重新評估。</li>
+      <li><b>雙向服務：</b>民眾拿到行動清單與多語福利卡；社工拿到格式化的交接摘要，減少重複問診。</li>
+    </ul>
+    <h3>三、涵蓋的福利工具（示範版 14 項）</h3>
+    <table><tr><th>工具</th><th>判斷依據（摘要）</th></tr>
+      <tr><td>低收入戶／中低收入戶</td><td>115 年各地最低生活費、1.5 倍門檻、動產限額</td></tr>
+      <tr><td>300 億中央擴大租金補貼</td><td>無自有住宅、平均每人每月所得低於最低生活費 3 倍（婚育家庭 3.5 倍）</td></tr>
+      <tr><td>長照 2.0</td><td>65 歲以上失能、50 歲以上失智、身心障礙者；1966 專線</td></tr>
+      <tr><td>身障者生活補助、中低收入老人生活津貼</td><td>最低生活費 2.5 倍以內</td></tr>
+      <tr><td>特殊境遇家庭扶助</td><td>單親、家暴、配偶失蹤等；最低生活費 2.5 倍以內</td></tr>
+      <tr><td>大專弱勢學生助學、學雜費減免</td><td>家庭年所得 70 萬以下、低／中低收入戶</td></tr>
+      <tr><td>育兒津貼</td><td>0–未滿 6 歲幼兒，依胎次每月 5,000／6,000／7,000 元</td></tr>
+      <tr><td>失業給付</td><td>非自願離職、就保年資；平均月投保薪資 60%</td></tr>
+      <tr><td>馬上關懷／急難救助</td><td>突發變故（傷病、死亡、失業、災害）</td></tr>
+      <tr><td>年輕族群心理健康支持、1925 安心專線</td><td>情緒壓力字詞偵測</td></tr>
+      <tr><td>新住民／境外生資源</td><td>外籍配偶諮詢專線、僑生急難與獎助學金</td></tr>
+      <tr><td>保護專線 113</td><td>家暴、兒少保護字詞偵測（最高優先）</td></tr>
+    </table>
+    <h3>四、使用技術</h3>
+    <ul>
+      <li>純前端單頁應用（HTML／CSS／JavaScript），免安裝、手機可用，可部署於 GitHub Pages 等任何靜態主機。</li>
+      <li>雙引擎設計：預設「本機規則引擎」（正規表示式＋中文數字解析，免金鑰、資料不外傳）；選用「大型語言模型引擎」（OpenAI 相容 API，JSON 結構化擷取）。</li>
+      <li>Web Speech API：語音輸入、結果朗讀（照顧視力退化或識字困難的使用者）。</li>
+      <li>與 AI 人機協作開發：需求拆解、福利法規查證與程式撰寫皆與生成式 AI 協作，再由本人逐條比對官方公告修正。</li>
+    </ul>
+    <h3>五、挑戰與反思</h3>
+    <ul>
+      <li><b>AI 幻覺 vs. 金額正確：</b>早期讓語言模型直接判斷資格，會把「1.5 倍」算錯或編造補助金額 → 改為「AI 只做理解，規則做計算」。</li>
+      <li><b>口語數字：</b>「三萬五」「3.5萬」「兩萬八」寫法各異 → 自寫中文金額解析器。</li>
+      <li><b>資料不足時不亂猜：</b>代理人會標示「需確認」並主動追問，而不是給出看似肯定的錯誤答案。</li>
+      <li><b>弱勢者的安全：</b>偵測到自傷或家暴字詞時，立即中斷流程、優先顯示 1925／113／110。</li>
+      <li><b>國籍限制的發現：</b>測試「僑生」案例時發現多數福利限本國籍設籍，代理人改為轉介學校與僑委會資源──這也是本作品想凸顯的福利缺口。</li>
+    </ul>
+  </div>
+</section>
+</main>
+<footer>AI AGENT CHALLENGE 2026・城中場「AI × 社會福利」參賽作品｜本人與 AI 人機協作之原創作品</footer>
+
+<script>
+/* ================= 知識庫：115年官方門檻 ================= */
+const CITY = {
+  taipei:   {name:"臺北市", min:20744, mid:29635, lowAsset:150000, midAsset:160000, rent3:61137, rent35:71327, rentCap:55000},
+  newtaipei:{name:"新北市", min:17750, mid:26625, lowAsset:100000, midAsset:150000, rent3:50700, rent35:59150, rentCap:45000},
+  taoyuan:  {name:"桃園市", min:17186, mid:25779, lowAsset:96000, midAsset:144000, rent3:50304, rent35:58688, rentCap:45000},
+  taichung: {name:"臺中市", min:16431, mid:24647, lowAsset:96000, midAsset:144000, rent3:48231, rent35:56270, rentCap:45000},
+  tainan:   {name:"臺南市", min:15515, mid:23273, lowAsset:96000, midAsset:144000, rent3:46545, rent35:54303, rentCap:40000},
+  kaohsiung:{name:"高雄市", min:16970, mid:25455, lowAsset:96000, midAsset:144000, rent3:48120, rent35:56140, rentCap:40000},
+  other:    {name:"其他縣市（臺灣省）", min:15515, mid:23273, lowAsset:96000, midAsset:144000, rent3:46545, rent35:54303, rentCap:39000},
+};
+const fmt = n => (Math.round(n)).toLocaleString("zh-TW");
+
+/* ================= 中文數字／金額解析 ================= */
+const CN = {零:0,〇:0,一:1,二:2,兩:2,两:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9,十:10};
+function cnInt(s){
+  if(s==null) return null;
+  if(/^[\d.]+$/.test(s)) return parseFloat(s);
+  if(s==="十") return 10;
+  let m = s.match(/^([一二兩三四五六七八九])?十([一二三四五六七八九])?$/);
+  if(m) return (m[1]?CN[m[1]]:1)*10 + (m[2]?CN[m[2]]:0);
+  if(s.length===1 && s in CN) return CN[s];
+  return null;
+}
+const NUM = "[\\d.,]+|[零〇一二兩两三四五六七八九十]+";
+function parseMoney(str){
+  if(!str) return null;
+  str = str.replace(/,/g,"");
+  let m = str.match(new RegExp("("+NUM+")\\s*萬\\s*([\\d]|[一二兩三四五六七八九])?\\s*(千)?"));
+  if(m){ let v = cnInt(m[1]); if(v==null) return null; v*=10000; if(m[2]) v += (cnInt(m[2])||0)*1000; return v; }
+  m = str.match(new RegExp("("+NUM+")\\s*千"));
+  if(m){ const v=cnInt(m[1]); return v==null?null:v*1000; }
+  m = str.match(/(\d{3,7})/);
+  if(m) return parseInt(m[1]);
+  m = str.match(/(\d+(?:\.\d+)?)\s*k\b/i);
+  if(m) return parseFloat(m[1])*1000;
+  return null;
+}
+function moneyNear(text, kwRe, span=14){
+  const re = new RegExp("(?:"+kwRe+")([^。；;!！?？\\n]{0,"+span+"})","gi");
+  let m; while((m=re.exec(text))){ const v=parseMoney(m[1]); if(v!=null && v>=500) return v; }
+  return null;
+}
+
+/* ================= 感知工具：規則式個案擷取 ================= */
+function extractRule(t){
+  const p = {}; const f = {};
+  const T = t;
+  // 縣市
+  if(/臺北|台北|北市|taipei/i.test(T) && !/新北/.test(T.replace(/臺北|台北/g,""))) p.city="taipei";
+  if(/新北|new taipei/i.test(T)) p.city="newtaipei";
+  else if(/桃園|taoyuan/i.test(T)) p.city="taoyuan";
+  else if(/台中|臺中|taichung/i.test(T)) p.city="taichung";
+  else if(/台南|臺南|tainan/i.test(T)) p.city="tainan";
+  else if(/高雄|kaohsiung/i.test(T)) p.city="kaohsiung";
+  else if(!p.city && /(新竹|基隆|宜蘭|苗栗|彰化|南投|雲林|嘉義|屏東|台東|臺東|花蓮|澎湖)/.test(T)) p.city="other";
+  if(!p.city && /(萬華|大安|信義|士林|北投|內湖|中正|松山|文山|南港|大同|中山區)/.test(T)) p.city="taipei";
+  if(!p.city && /(板橋|三重|中和|永和|新莊|新店|土城|蘆洲|汐止|樹林|淡水)/.test(T)) p.city="newtaipei";
+  // 家戶人數
+  let m;
+  if((m=T.match(new RegExp("一家("+NUM+")口")))||(m=T.match(new RegExp("("+NUM+")口之家")))||(m=T.match(new RegExp("(?:全家|家裡|家中|家裏)(?:共|有)?("+NUM+")(?:個)?人")))||(m=T.match(/family of (\d+)/i))) p.size=cnInt(m[1]);
+  if(/獨居|一個人住|自己一個人|自己住|live alone|living alone/i.test(T)) p.size=1;
+  // 收入
+  if(/(沒有|無|零|沒)(任何)?(收入|工作收入)|no income/i.test(T)) p.income=0;
+  let inc = moneyNear(T,"月收入|月薪|收入|薪水|薪資|賺|領|月入|津貼|income|salary|earn");
+  if(inc!=null){ if(/年收|年所得|年薪/.test(T) && inc>100000) inc=Math.round(inc/12); p.income=inc; }
+  // 太太／先生另有收入（加總）
+  const inc2 = moneyNear(T,"太太|老婆|先生|老公|配偶|另一半",22);
+  if(inc2!=null && p.income!=null && inc2!==p.income) p.income += inc2;
+  const rent = moneyNear(T,"房租|租金|rent",8); if(rent!=null){ p.rentAmt=rent; if(p.income===rent) delete p.income; }
+  const dep = moneyNear(T,"存款|積蓄|savings",8); if(dep!=null) p.deposit=dep;
+  // 年齡
+  const ages=[...T.matchAll(new RegExp("("+NUM+")\\s*歲","g"))].map(x=>cnInt(x[1])).filter(x=>x!=null);
+  {const ad=ages.find(a=>a>=15); if(ad!=null) p.age=ad;}
+  if(/(阿嬤|阿公|奶奶|爺爺|外婆|外公|老人家|長輩|銀髮)/.test(T) || ages.some(a=>a>=65)) f.elder=true;
+  // 兒童
+  if(ages.some(a=>a<6) || /(寶寶|嬰兒|新生兒|baby|toddler)/i.test(T)) f.child06=true;
+  if((m=T.match(new RegExp("("+NUM+")\\s*個(小孩|孩子|子女|小朋友)")))) p.kids=cnInt(m[1]);
+  if(/(兒子|女兒|小孩|孩子|子女)/.test(T) && p.kids==null) p.kids = (T.match(/(兒子|女兒)/g)||[]).length||1;
+  // 住宅
+  if(/(租屋|租房|房租|租的|租金|租一間|在外租|rent)/i.test(T)) f.renting=true;
+  if(/(自己的房子|自有房|有房子|房貸|買房)/.test(T)) {f.ownsHome=true; f.renting=false;}
+  // 身分與事件
+  if(/(大學|大專|研究所|學生|東吳|讀書|student)/i.test(T) && !/(國中|國小|高中)生?都?在?讀/.test(T)) f.student=true;
+  if(/(國中|國小|高中)/.test(T) && !/(大學|大專|東吳)/.test(T)) f.student=false;
+  if(/(身障|身心障礙|殘障|障礙手冊|身障證明|disab)/i.test(T)) f.disabled=true;
+  if(/(失能|失智|中風|行動不便|臥床|需要人照顧|需要照顧|長照|坐輪椅|輪椅)/.test(T)) f.ltc=true;
+  if(/(失智)/.test(T)) f.dementia=true;
+  if(/(失業|被裁|資遣|裁員|沒工作|被開除|關廠|放無薪假|laid off|unemployed|lost my job)/i.test(T)) f.jobloss=true;
+  if(/(重病|住院|開刀|車禍|過世|去世|往生|火災|急難|癌|意外|生意失敗|倒閉|欠債|斷炊|繳不出)/.test(T)) f.crisis=true;
+  if(/(單親|離婚|喪偶|守寡|一個人養|single (mom|dad|parent))/i.test(T)) f.single=true;
+  if(/(新住民|外籍配偶|外配|陸配|越南|印尼|泰國|菲律賓|柬埔寨|緬甸|嫁來|嫁到台灣)/.test(T)) f.newres=true;
+  if(/(僑生|港澳生|澳門|香港生|境外生|外籍生|國際生|陸生|international student)/i.test(T)) f.overseas=true;
+  if(/(結婚|新婚)/.test(T) && /(兩年|2年|今年|去年|剛)/.test(T)) f.newlywed=true;
+  if(/(壓力|憂鬱|焦慮|失眠|睡不著|撐不下去|好累|崩潰|想哭|depress|anxi)/i.test(T)) f.mental=true;
+  if(/(原住民|阿美|泰雅|排灣|布農)/.test(T)) f.indigenous=true;
+  // 危機
+  const risk = [];
+  if(/(自殺|想死|不想活|輕生|結束生命|活不下去|kill myself|suicid)/i.test(T)) risk.push("self");
+  if(/(家暴|被打|打我|打小孩|虐待|威脅要殺|性侵|abuse)/i.test(T)) risk.push("violence");
+  if(p.size==null && f.single && p.kids) p.size = p.kids + 1 + (/(爸|媽|父母|阿嬤|阿公)一起住/.test(T)?1:0);
+  return {p,f,risk};
+}
+
+/* ================= 選用：LLM 擷取 ================= */
+async function extractLLM(t){
+  const key=$("#apiKey").value.trim(); if(!key) return null;
+  const sys=`你是社會福利個案擷取器。從使用者描述擷取 JSON，不要多餘文字。欄位：city(taipei|newtaipei|taoyuan|taichung|tainan|kaohsiung|other|null), size(家戶人數 int|null), income(家戶每月總收入 int 新臺幣|null), rentAmt(int|null), deposit(int|null), age(int|null), kids(int|null), flags:{elder,child06,renting,ownsHome,student,disabled,ltc,dementia,jobloss,crisis,single,newres,overseas,newlywed,mental,indigenous}(boolean), risk:["self"|"violence"]。不確定就給 null 或 false。`;
+  const r = await fetch($("#apiBase").value.replace(/\/$/,"")+"/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+    body:JSON.stringify({model:$("#apiModel").value,temperature:0,response_format:{type:"json_object"},messages:[{role:"system",content:sys},{role:"user",content:t}]})});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  const j=await r.json(); const o=JSON.parse(j.choices[0].message.content);
+  const p={}; ["city","size","income","rentAmt","deposit","age","kids"].forEach(k=>{if(o[k]!=null)p[k]=o[k]});
+  const f={}; Object.entries(o.flags||{}).forEach(([k,v])=>{if(v)f[k]=true});
+  return {p,f,risk:o.risk||[]};
+}
+async function llmReply(summaryText){
+  const key=$("#apiKey").value.trim(); if(!key) return null;
+  try{
+    const r = await fetch($("#apiBase").value.replace(/\/$/,"")+"/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+      body:JSON.stringify({model:$("#apiModel").value,temperature:.6,messages:[{role:"system",content:"你是溫暖、務實的社工助理，用臺灣繁體中文、3–5 句話，鼓勵使用者並說明最先該做的一步。不得新增或修改任何補助金額與資格結論，只能根據提供的評估結果。"},{role:"user",content:summaryText}]})});
+    const j=await r.json(); return j.choices[0].message.content;
+  }catch(e){return null}
+}
+
+/* ================= 工具：福利資格計算 ================= */
+function evaluate(P,F){
+  const c = CITY[P.city||"other"]; const out=[];
+  const hasInc = P.income!=null && P.size; const pc = hasInc ? P.income/P.size : null;
+  const pcs = hasInc ? `家戶月收入 ${fmt(P.income)} ÷ ${P.size} 人 = 每人每月 ${fmt(pc)} 元` : "（缺少家戶收入或人數，無法計算）";
+  const nonCitizen = F.overseas && !F.newres;
+  const add=(o)=>out.push(o);
+  const citizenNote = nonCitizen ? "⚠️ 此項須具中華民國國籍並在臺設籍，境外生／僑生通常不適用。" : "";
+
+  // 低收 / 中低收
+  {
+    let st="no", why="", calc=pcs;
+    if(nonCitizen){ st="no"; why="須在臺設籍滿一定期間之國民。"; }
+    else if(!hasInc){ st="check"; why="需要家戶收入與人數才能試算。"; }
+    else if(pc<=c.min){ st="likely"; why=`每人每月收入低於 ${c.name} 115 年最低生活費 ${fmt(c.min)} 元，可能符合「低收入戶」。`; calc+=`\n≤ 最低生活費 ${fmt(c.min)} ✔`; }
+    else if(pc<=c.mid){ st="likely"; why=`每人每月收入低於 ${c.name} 中低收入戶門檻 ${fmt(c.mid)} 元（最低生活費 1.5 倍）。`; calc+=`\n> 最低生活費 ${fmt(c.min)}\n≤ 中低收門檻 ${fmt(c.mid)} ✔`; }
+    else if(pc<=c.mid*1.1){ st="check"; why=`只比中低收門檻 ${fmt(c.mid)} 元高一點；工作收入有扣除額、部分家人可能不列計，建議仍去問。`; calc+=`\n略高於 ${fmt(c.mid)}（差 ${fmt(pc-c.mid)}）`; }
+    else { why=`每人每月收入高於中低收門檻 ${fmt(c.mid)} 元。`; calc+=`\n> ${fmt(c.mid)} ✘`; }
+    if(st!=="no" && P.deposit!=null){ const lim=c.midAsset*(P.size||1); calc+=`\n存款 ${fmt(P.deposit)} vs 動產限額約 ${fmt(lim)}（每人 ${fmt(c.midAsset)}/年）${P.deposit<=lim?"✔":"✘"}`; if(P.deposit>lim){st="check"; why+=" 但存款可能超過動產限額。";} }
+    add({id:"lowinc", name:"低收入戶／中低收入戶資格", st, why, calc,
+      benefit:"取得資格後可連帶享有：生活扶助、健保費補助、學雜費減免、租金補貼加碼、長照部分負擔減免等。",
+      how:"戶籍地區公所社會課申請（臨櫃），可先打 1957 福利諮詢專線。", docs:["申請表（區公所提供）","全戶戶口名簿／戶籍謄本","身分證、印章","存摺封面影本","工作收入證明（薪資單或切結）"], link:"https://dep.mohw.gov.tw/DOSAASW/"});
+  }
+  // 租金補貼
+  if(F.renting || P.rentAmt){
+    const fam = F.child06 || P.kids>0 || F.newlywed; const lim = fam?c.rent35:c.rent3;
+    let st="check", why="", calc=pcs;
+    if(nonCitizen){ st="no"; why="申請人須為中華民國國民並在國內設有戶籍。"; }
+    else if(F.ownsHome){ st="no"; why="家庭成員有自有房屋者不符合。"; }
+    else if(hasInc && pc<lim){ st="likely"; why=`租屋且每人每月所得低於 ${c.name} 門檻 ${fmt(lim)} 元（最低生活費 ${fam?"3.5":"3"} 倍${fam?"，婚育家庭放寬":""}）。`; calc+=`\n< ${fmt(lim)} ✔`; }
+    else if(hasInc){ st="no"; why=`每人每月所得高於門檻 ${fmt(lim)} 元。`; calc+=`\n≥ ${fmt(lim)} ✘`; }
+    else why="租屋者多數符合，需確認所得。";
+    if(P.rentAmt) calc+=`\n房租 ${fmt(P.rentAmt)} ≤ 租金上限 ${fmt(c.rentCap)} ${P.rentAmt<=c.rentCap?"✔":"✘"}`;
+    let bonus=[]; if(P.age && P.age<40 && P.size===1) bonus.push("單身青年加碼 1.2 倍"); if(P.kids>0||F.child06) bonus.push("育有未成年子女加碼 1.4 倍起"); if(F.newlywed) bonus.push("新婚加碼"); if(F.disabled||F.elder) bonus.push("社會弱勢加碼 1.2 倍");
+    add({id:"rent", name:"300 億中央擴大租金補貼", st, why, calc,
+      benefit:"依縣市與身分每月補貼數千元，115 年受理至 12/31。"+(bonus.length?" 可能適用："+bonus.join("、")+"。":""),
+      how:"線上申請：內政部國土管理署租金補貼專區（也可郵寄或到縣市政府臨櫃）。", docs:["租賃契約（已起租或 60 日內起租）","申請人存摺封面","弱勢身分證明（如有）"], link:"https://has.nlma.gov.tw/house300e"});
+  }
+  // 長照
+  if(F.ltc || F.dementia || F.disabled || (F.elder && /照顧/.test(state.raw))){
+    const st = (F.ltc||F.dementia) ? "likely":"check";
+    const co = !hasInc?"一般戶部分負擔約 16%，中低收約 5%，低收入戶免費。": (pc<=c.min?"若為低收入戶：照顧服務免部分負擔。": pc<=c.mid?"若為中低收入戶：部分負擔約 5%。":"一般戶部分負擔約 16%。");
+    add({id:"ltc", name:"長照 2.0 服務", st, why:"65 歲以上失能、50 歲以上失智、55 歲以上原住民、領有身障證明且失能者皆可申請；不看收入，只影響自付比例。", calc:co,
+      benefit:"居家照顧、日間照顧、交通接送、輔具與居家無障礙改善、喘息服務（讓家人休息）。", how:"撥打 1966 長照專線（前 5 分鐘免費），照管專員會到家評估。", docs:["長輩身分證、健保卡","既有診斷證明（如有）"], link:"https://1966.gov.tw/"});
+  }
+  // 中低收入老人生活津貼
+  if(F.elder){
+    const lim=c.min*2.5; let st="check", why="65 歲以上、未接受公費安置，家庭總收入平均每人每月未超過最低生活費 2.5 倍。", calc=pcs;
+    if(nonCitizen) st="no";
+    else if(hasInc && pc<=c.min*1.5){ st="likely"; calc+=`\n≤ 1.5 倍 ${fmt(c.min*1.5)} → 較高額度級距`; }
+    else if(hasInc && pc<=lim){ st="likely"; calc+=`\n≤ 2.5 倍 ${fmt(lim)} → 一般級距`; }
+    else if(hasInc){ st="no"; calc+=`\n> 2.5 倍 ${fmt(lim)} ✘`; }
+    add({id:"elder", name:"中低收入老人生活津貼", st, why, calc, benefit:"依級距每月數千元（以當年度公告為準）。", how:"戶籍地區公所社會課。", docs:["身分證、戶口名簿","存摺封面"], link:"https://dep.mohw.gov.tw/DOSAASW/"});
+  }
+  // 身障
+  if(F.disabled){
+    const lim=c.min*2.5; let st="check", calc=pcs;
+    if(hasInc && pc<=lim){st="likely"; calc+=`\n≤ 2.5 倍 ${fmt(lim)} ✔`;} else if(hasInc){st="no"; calc+=`\n> 2.5 倍 ${fmt(lim)} ✘`;}
+    add({id:"dis", name:"身心障礙者生活補助", st, why:"領有身心障礙證明、未接受公費安置，家庭總收入平均每人每月未超過最低生活費 2.5 倍（另有財產限制）。", calc, benefit:"依障礙等級與家庭經濟狀況每月補助（數千元），另可申請輔具、居家照顧補助。", how:"戶籍地區公所社會課。", docs:["身心障礙證明","戶口名簿","存摺封面"], link:"https://www.sfaa.gov.tw/"});
+  }
+  // 特殊境遇
+  if(F.single || state.risk.includes("violence")){
+    const lim=c.min*2.5; let st="check", calc=pcs;
+    if(hasInc && pc<=lim){st="likely"; calc+=`\n≤ 2.5 倍 ${fmt(lim)} ✔`;} else if(hasInc){st="no"; calc+=`\n> 2.5 倍 ${fmt(lim)} ✘`;}
+    add({id:"special", name:"特殊境遇家庭扶助", st, why:"單親獨自扶養未成年子女、遭受家暴、配偶死亡或失蹤等，家庭總收入平均每人每月未超過最低生活費 2.5 倍、存款在限額內。", calc,
+      benefit:"緊急生活扶助、子女生活津貼、兒童托育津貼、子女教育補助、傷病醫療補助、法律訴訟補助。", how:"戶籍地區公所或社會局；可先撥 1957。", docs:["戶籍謄本（顯示單親或相關事實）","收入證明","存摺封面"], link:"https://www.sfaa.gov.tw/"});
+  }
+  // 育兒津貼
+  if(F.child06){
+    add({id:"child", name:"育兒津貼（0–未滿 6 歲）", st: nonCitizen?"no":"likely", why:"未滿 6 歲且未進公共化／準公共幼兒園或托育，由父母自行照顧或送私立機構者。", calc:"依胎次每月：第 1 名 5,000 元、第 2 名 6,000 元、第 3 名起 7,000 元",
+      benefit:"每月現金津貼，直接撥入帳戶。", how:"戶籍地區公所（0–2 歲），2–5 歲由教育部幼兒就學補助系統處理。", docs:["幼兒與申請人身分證明","存摺封面"], link:"https://www.sfaa.gov.tw/"});
+  }
+  // 學生
+  if(F.student){
+    if(nonCitizen){
+      add({id:"ovs", name:"境外生／僑生急難與獎助學金", st:"likely", why:"多數政府福利限本國籍設籍；境外生可從學校與僑委會管道求助。", calc:"校內：國際處（僑生急難慰問、清寒僑生助學金）、生輔組工讀\n校外：僑委會僑生獎助學金",
+        benefit:"急難慰問金、助學金、工讀機會；心理諮商可找學校諮商中心（免費）。", how:"先找學校國際處僑生輔導老師，說明家中變故；並確認打工已申請工作許可（每週上限 20 小時）。", docs:["學生證","家中變故說明（可簡要）","存摺"], link:"https://www.ocac.gov.tw/"});
+    } else {
+      const annual = P.income!=null ? P.income*12 : null;
+      let st="check", calc= annual!=null?`家庭年所得估計 ${fmt(P.income)} × 12 = ${fmt(annual)} 元`:"（缺家庭年所得）", benefit="依家庭年所得級距每年 12,000–35,000 元。";
+      if(annual!=null && annual<=700000){ st="likely"; const amt= annual<=300000?35000:annual<=400000?27000:annual<=500000?22000:annual<=600000?17000:12000; calc+=`\n≤ 70 萬 ✔ → 參考級距約 ${fmt(amt)} 元／年`; }
+      else if(annual!=null){ st="no"; calc+=`\n> 70 萬 ✘`; }
+      add({id:"stu", name:"大專校院弱勢學生助學計畫", st, why:"本國籍學生，家庭年所得 70 萬元以下、利息所得 2 萬元以下、不動產 650 萬元以下，且上學期成績符合規定。", calc, benefit,
+        how:"每學期於學校生輔組／學務處公告期間申請；若為低收／中低收入戶，另可申請學雜費減免。", docs:["申請表","全戶戶籍謄本","學生證"], link:"https://helpdreams.moe.edu.tw/"});
+    }
+  }
+  // 失業
+  if(F.jobloss){
+    add({id:"job", name:"就業保險失業給付", st: nonCitizen?"no":"check", why:"非自願離職（資遣、關廠等）、離職前 3 年內就保年資合計滿 1 年、具工作能力與意願。", calc:"每月約 = 離職前 6 個月平均月投保薪資 × 60%（有扶養眷屬每人加 10%，最多 20%）\n最長 6 個月；45 歲以上或身障者 9 個月",
+      benefit:"按月領取，同時可參加免費職訓並領職訓生活津貼。", how:"帶離職證明至就業服務站辦理求職登記（離職後 2 年內）。客服 0800-777-888。", docs:["離職證明（載明離職原因）","身分證","存摺封面"], link:"https://www.taiwanjobs.gov.tw/"});
+  }
+  // 急難
+  if(F.crisis || F.jobloss){
+    add({id:"urgent", name:"馬上關懷／急難救助", st: nonCitizen?"check":"urgent", why:"家庭遭逢突發變故（主要生計者死亡、失蹤、重傷病、失業、災害）導致生活陷困。", calc:"馬上關懷：一般 1 萬–3 萬元，強調快速、到宅訪視後即可核發",
+      benefit:"一次性現金救助，不必先取得低收資格。"+(nonCitizen?" ⚠️ 原則上以本國籍設籍者為主，境外生請改向學校國際處申請急難慰問金。":""), how:"立即聯繫里長、戶籍地區公所，或撥 1957；北市可撥 1999 轉社會局。", docs:["身分證","變故證明（診斷書、離職證明、死亡證明等）"], link:"https://dep.mohw.gov.tw/DOSAASW/"});
+  }
+  // 心理
+  if(F.mental || state.risk.includes("self")){
+    add({id:"mind", name:"心理健康支持", st:"likely", why:"偵測到壓力或情緒困擾的描述。", calc:"1925 安心專線（24 小時免費）\n年輕族群心理健康支持方案：符合年齡者可享免費心理諮商（依衛福部當年公告）",
+      benefit:"免費、保密的專業陪伴；學生也可使用學校諮商中心。", how:"撥 1925；或至衛福部心理健康司網站查詢合作院所。", docs:["身分證、健保卡（諮商方案）"], link:"https://www.mohw.gov.tw/"});
+  }
+  // 新住民
+  if(F.newres){
+    add({id:"newres", name:"新住民多語諮詢與服務", st:"likely", why:"外籍或大陸配偶可使用多語諮詢、家庭服務中心與新住民發展基金補助。", calc:"外籍配偶諮詢專線 0800-088-885（越、印、泰、柬、英語）\n移民署外來人士生活諮詢 0800-024-111",
+      benefit:"福利申請陪同、通譯、生活適應與就業協助；子女相關補助比照本國籍家庭。", how:"撥打諮詢專線，或到各縣市新住民家庭服務中心。", docs:["居留證／身分證","戶口名簿"], link:"https://www.immigration.gov.tw/"});
+  }
+  // 保護
+  if(state.risk.includes("violence")){
+    add({id:"protect", name:"113 保護專線（家暴／兒少保護）", st:"urgent", why:"偵測到可能的暴力或受虐情況，安全優先。", calc:"113：24 小時、可用中英越印泰柬語\n立即危險請撥 110", benefit:"緊急安置、聲請保護令、法律與經濟協助。", how:"現在就撥 113；身處危險請撥 110。", docs:[], link:"https://www.mohw.gov.tw/"});
+  }
+  return out;
+}
+
+/* ================= 多語福利卡字典 ================= */
+const I18N = {
+  zh:{t:"我的福利卡",lead:"請帶這張卡到戶籍地區公所社會課，或撥打下面的電話：",l:"可能符合",c:"需確認",u:"緊急",hot:"福利諮詢 1957｜長照 1966｜安心專線 1925｜保護專線 113｜緊急 110"},
+  en:{t:"My Welfare Card",lead:"Show this card at your district office (Social Affairs Section) or call:",l:"Likely eligible",c:"Please check",u:"Urgent",hot:"Welfare 1957 | Long-term care 1966 | Mental health 1925 | Protection 113 | Police 110 | Foreign spouse hotline 0800-088-885"},
+  vi:{t:"Thẻ phúc lợi của tôi",lead:"Mang thẻ này đến Phòng Xã hội của Văn phòng quận/huyện hoặc gọi:",l:"Có thể đủ điều kiện",c:"Cần xác nhận",u:"Khẩn cấp",hot:"Phúc lợi 1957 | Chăm sóc dài hạn 1966 | Sức khỏe tâm thần 1925 | Bảo vệ 113 | Cảnh sát 110 | Đường dây cho vợ/chồng nước ngoài 0800-088-885 (tiếng Việt)"},
+  id:{t:"Kartu Kesejahteraan Saya",lead:"Bawa kartu ini ke Kantor Distrik (Bagian Sosial) atau hubungi:",l:"Kemungkinan memenuhi syarat",c:"Perlu dicek",u:"Darurat",hot:"Kesejahteraan 1957 | Perawatan jangka panjang 1966 | Kesehatan mental 1925 | Perlindungan 113 | Polisi 110 | Hotline pasangan asing 0800-088-885 (Bahasa Indonesia)"}
+};
+const PN = {
+  lowinc:{en:"Low / middle-low income household status",vi:"Tư cách hộ thu nhập thấp / cận nghèo",id:"Status rumah tangga berpenghasilan rendah"},
+  rent:{en:"Central rent subsidy",vi:"Trợ cấp tiền thuê nhà",id:"Subsidi sewa rumah"},
+  ltc:{en:"Long-term care 2.0 (call 1966)",vi:"Dịch vụ chăm sóc dài hạn 2.0 (gọi 1966)",id:"Layanan perawatan jangka panjang 2.0 (1966)"},
+  elder:{en:"Living allowance for low-income seniors",vi:"Trợ cấp sinh hoạt cho người cao tuổi thu nhập thấp",id:"Tunjangan hidup lansia berpenghasilan rendah"},
+  dis:{en:"Living subsidy for people with disabilities",vi:"Trợ cấp sinh hoạt cho người khuyết tật",id:"Subsidi hidup penyandang disabilitas"},
+  special:{en:"Assistance for families in special circumstances (single parents etc.)",vi:"Trợ giúp gia đình hoàn cảnh đặc biệt (cha/mẹ đơn thân...)",id:"Bantuan keluarga dalam keadaan khusus (orang tua tunggal dll.)"},
+  child:{en:"Childcare allowance (under 6): NT$5,000–7,000/month",vi:"Trợ cấp nuôi con dưới 6 tuổi: 5.000–7.000 Đài tệ/tháng",id:"Tunjangan anak di bawah 6 tahun: NT$5.000–7.000/bulan"},
+  stu:{en:"Financial aid for disadvantaged college students",vi:"Hỗ trợ học phí cho sinh viên hoàn cảnh khó khăn",id:"Bantuan biaya kuliah mahasiswa kurang mampu"},
+  ovs:{en:"Emergency aid & scholarships for overseas students (school international office)",vi:"Trợ cấp khẩn cấp & học bổng cho sinh viên Hoa kiều",id:"Bantuan darurat & beasiswa mahasiswa luar negeri"},
+  job:{en:"Unemployment benefits (60% of insured salary)",vi:"Trợ cấp thất nghiệp (60% lương bảo hiểm)",id:"Tunjangan pengangguran (60% gaji yang diasuransikan)"},
+  urgent:{en:"Emergency relief cash (NT$10,000–30,000)",vi:"Cứu trợ khẩn cấp (10.000–30.000 Đài tệ)",id:"Bantuan darurat tunai (NT$10.000–30.000)"},
+  mind:{en:"Free mental health support (1925)",vi:"Hỗ trợ sức khỏe tâm thần miễn phí (1925)",id:"Dukungan kesehatan mental gratis (1925)"},
+  newres:{en:"Multilingual services for new immigrants",vi:"Dịch vụ đa ngôn ngữ cho tân di dân",id:"Layanan multibahasa untuk imigran baru"},
+  protect:{en:"Protection hotline 113 (domestic violence / child protection)",vi:"Đường dây bảo vệ 113 (bạo lực gia đình)",id:"Hotline perlindungan 113 (KDRT)"}
+};
+
+/* ================= 狀態與 UI ================= */
+const $=s=>document.querySelector(s);
+const state={P:{},F:{},risk:[],raw:"",awaiting:null,results:[],asked:new Set()};
+const FIELDS=[["city","居住縣市","select"],["size","家戶人數","number"],["income","家戶每月總收入(元)","number"],["rentAmt","每月房租(元)","number"],["deposit","存款(元，選填)","number"],["age","本人年齡","number"],["kids","子女數","number"]];
+const FLAGS=[["elder","👵 家中有65歲以上長者"],["child06","👶 有未滿6歲幼兒"],["renting","🏠 租屋"],["ownsHome","🏡 有自有房屋"],["student","🎓 大專學生"],["disabled","♿ 身心障礙"],["ltc","🦽 失能／需要照顧"],["jobloss","💼 非自願失業"],["crisis","⚡ 突發變故"],["single","👩‍👧 單親"],["newres","🌏 新住民"],["overseas","✈️ 境外生／僑生"],["newlywed","💍 新婚(2年內)"],["mental","💭 情緒壓力"]];
+const DEMOS=[
+  ["🇻🇳 新住民單親媽媽","我是越南嫁來台灣的新住民，現在住新北板橋，離婚後一個人養兩個小孩，一個4歲一個9歲。我在工廠上班月薪大概2萬8，房子是租的，房租1萬2，最近壓力很大睡不著。"],
+  ["👵 獨居中風阿嬤","我阿嬤82歲，住台北萬華，一個人住。去年中風之後行動不便，需要人照顧，每個月收入只有老年年金大概9千塊，沒有存款。"],
+  ["💼 中年被資遣爸爸","我47歲住台中，上個月被公司資遣，一家四口，太太打工月收入大約2萬，兩個小孩都在讀國中，房貸壓力很大，最近常常失眠。"],
+  ["🎓 東吳澳門僑生","我是東吳的澳門僑生，21歲，家裡最近生意失敗，生活費快撐不下去了。我在台北租房，房租8000，每月打工收入大約6000。"]
+];
+
+function msg(text,who="bot",cls=""){const d=document.createElement("div");d.className="msg "+who+" "+cls;d.textContent=text;$("#chat").appendChild(d);$("#chat").scrollTop=1e9;return d}
+function chips(list,onPick){const w=document.createElement("div");w.className="chips";list.forEach(([label,val])=>{const b=document.createElement("button");b.className="chip";b.textContent=label;b.onclick=()=>{w.remove();onPick(val,label)};w.appendChild(b)});$("#chat").appendChild(w);$("#chat").scrollTop=1e9}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function trace(ic,title,detail){const ul=$("#trace");if(ul.querySelector(".empty"))ul.innerHTML="";const li=document.createElement("li");li.className="step";li.innerHTML=`<div class="ic">${ic}</div><div><b>${title}</b><small>${detail}</small></div>`;ul.appendChild(li);ul.scrollTop=1e9;await sleep(280)}
+
+function renderProfile(){
+  const P=state.P, F=state.F; const box=$("#profile"); box.innerHTML="";
+  FIELDS.forEach(([k,label,type])=>{
+    const d=document.createElement("div"); d.className="field"+((["city","size","income"].includes(k)&&P[k]==null)?" missing":"");
+    let inp;
+    if(type==="select"){inp=document.createElement("select");inp.innerHTML=`<option value="">（未知）</option>`+Object.entries(CITY).map(([v,c])=>`<option value="${v}">${c.name}</option>`).join("");inp.value=P[k]||"";}
+    else{inp=document.createElement("input");inp.type="number";inp.value=P[k]??"";inp.placeholder="未知";}
+    inp.onchange=()=>{const v=inp.value; if(v===""){delete P[k]} else P[k]= type==="select"?v:Number(v); d.classList.toggle("missing",["city","size","income"].includes(k)&&P[k]==null)};
+    d.innerHTML=`<label>${label}</label>`; d.appendChild(inp); box.appendChild(d);
+  });
+  const fl=$("#flags"); fl.innerHTML="";
+  FLAGS.forEach(([k,l])=>{const s=document.createElement("span");s.className="flag"+(F[k]?" on":"");s.textContent=l;s.onclick=()=>{F[k]=!F[k];s.classList.toggle("on")};fl.appendChild(s)});
+}
+
+const ASK={
+  city:{q:"請問你（或需要幫助的人）戶籍／住在哪個縣市？各地門檻不同。",chips:[["臺北市","taipei"],["新北市","newtaipei"],["桃園市","taoyuan"],["臺中市","taichung"],["臺南市","tainan"],["高雄市","kaohsiung"],["其他縣市","other"]]},
+  size:{q:"家裡一起計算的有幾個人？（通常是同戶籍的你、配偶、子女、父母）",chips:[["1 人（獨居）",1],["2 人",2],["3 人",3],["4 人",4],["5 人以上",5]]},
+  income:{q:"全家每個月的收入加起來大約多少？（薪水、津貼、年金都算，估計就好）",chips:[["沒有收入",0],["1 萬以下",8000],["約 2 萬",20000],["約 3 萬",30000],["約 5 萬",50000],["8 萬以上",80000]]}
+};
+function nextMissing(){for(const k of ["city","size","income"]){ if(state.P[k]==null && !state.asked.has(k)) return k;} return null}
+
+async function handleUser(text){
+  if(!text.trim()) return;
+  msg(text,"user"); $("#inp").value="";
+  // 回答追問
+  if(state.awaiting){
+    const k=state.awaiting; let v=null;
+    if(k==="city"){ const r=extractRule(text).p.city; v=r||null; }
+    else if(k==="size"){ const m=text.match(new RegExp(NUM)); v=m?cnInt(m[0]):null; if(/獨居|一個/.test(text)) v=1; }
+    else if(k==="income"){ v=/(沒有|無|0)/.test(text)?0:parseMoney(text); }
+    if(v!=null){ state.P[k]=v; state.awaiting=null; await trace("✍️","更新個案檔",`${k} = ${v}`);}
+  }
+  state.raw += "\n"+text;
+  await runAgent(text);
+}
+
+async function runAgent(newText){
+  // 1 感知
+  let ext;
+  if(newText){
+    await trace("👂","感知：理解使用者描述","工具 <code>profile_extractor</code>");
+    ext=extractRule(newText);
+    if($("#apiKey").value.trim()){
+      try{ const l=await extractLLM(newText); if(l){ ext={p:{...ext.p,...l.p},f:{...ext.f,...l.f},risk:[...new Set([...ext.risk,...l.risk])]}; await trace("🤖","LLM 語意擷取完成","與規則擷取結果合併（LLM 優先）"); } }
+      catch(e){ await trace("⚠️","LLM 呼叫失敗，自動改用本機規則引擎",String(e.message)); }
+    }
+    Object.assign(state.P, ext.p); Object.entries(ext.f).forEach(([k,v])=>state.F[k]=v);
+    state.risk=[...new Set([...state.risk,...ext.risk])];
+    const got=[...Object.entries(ext.p).map(([k,v])=>`${k}=${v}`),...Object.keys(ext.f).filter(k=>ext.f[k]).map(k=>"#"+k)];
+    await trace("🗂️","擷取到的事實", got.length?got.join("　"):"（這段話沒有新的結構化資訊）");
+    renderProfile();
+  }
+  // 2 安全
+  await trace("🛡️","安全護欄檢查","掃描自傷、家暴、立即危險字詞");
+  if(state.risk.includes("self")){
+    msg("我很在意你現在的安全。如果你有傷害自己的念頭，請現在就撥 1925 安心專線（24 小時、免費、保密）；有立即危險請撥 119 或 110。你不用一個人撐著，我會陪你把能申請的協助一起找出來。","bot","alert");
+    await trace("🚨","觸發危機轉介","優先顯示 1925／110／119，再繼續福利評估");
+  }
+  if(state.risk.includes("violence")){
+    msg("你的安全最重要：如果正在遭受暴力，請撥 113 保護專線（24 小時，可用多國語言）；有立即危險請撥 110。","bot","alert");
+    await trace("🚨","觸發保護轉介","113 保護專線列為第一優先");
+  }
+  // 3 規劃
+  const miss=nextMissing();
+  if(miss){
+    state.asked.add(miss); state.awaiting=miss;
+    await trace("🧩","規劃：資料不足，先追問",`缺少 <code>${miss}</code>，它是計算門檻的必要欄位；不亂猜。`);
+    msg(ASK[miss].q);
+    chips(ASK[miss].chips, async (val,label)=>{ msg(label,"user"); state.P[miss]=val; state.awaiting=null; await trace("✍️","更新個案檔",`${miss} = ${val}`); renderProfile(); await runAgent(null); });
+    return;
+  }
+  await trace("🧩","規劃：資料足夠，開始評估",`將呼叫 <code>eligibility_calculator</code>、<code>program_matcher</code>、<code>action_planner</code>`);
+  await finish();
+}
+
+async function finish(){
+  const P=state.P,F=state.F;
+  const c=CITY[P.city||"other"];
+  if(P.income!=null&&P.size) await trace("🧮","工具：eligibility_calculator",`每人每月 = ${fmt(P.income)} ÷ ${P.size} = ${fmt(P.income/P.size)} 元\n${c.name} 115年 最低生活費 ${fmt(c.min)}／中低收 ${fmt(c.mid)}`);
+  const res=evaluate(P,F); state.results=res;
+  const yes=res.filter(r=>r.st!=="no");
+  await trace("🔎","工具：program_matcher",`比對 14 項福利 → 可能符合 ${res.filter(r=>r.st==="likely").length}、需確認 ${res.filter(r=>r.st==="check").length}、緊急 ${res.filter(r=>r.st==="urgent").length}`);
+  // 反思
+  const warn=[];
+  if(P.deposit==null) warn.push("未提供存款，低收／中低收的動產限額尚未檢查");
+  if(F.overseas) warn.push("使用者為境外生：本國籍限定項目已自動排除，改轉介校內資源");
+  if(P.income!=null && P.income>0 && P.size>=3 && P.income/P.size<5000) warn.push("每人收入偏低，可能漏報收入或有其他家人收入");
+  await trace("🔍","反思：自我檢查", warn.length?warn.join("\n"):"關鍵欄位齊全，結論信心：中高");
+  await trace("🪜","工具：action_planner","依急迫性排序：安全 → 現金救助 → 資格身分 → 長期補助");
+  render(res);
+  const top=res.filter(r=>r.st!=="no").slice(0,4).map(r=>"・"+r.name).join("\n");
+  let reply=`我幫你整理好了！在 ${c.name} 的條件下，你最值得先處理的是：\n${top||"・目前沒有明顯符合的項目，但仍可撥 1957 請專人協助"}\n\n下方有每一項的計算過程、要帶的文件和行動清單。資料若有錯，可以直接改「個案檔」再按重新評估。`;
+  const ll=await llmReply(`個案：${JSON.stringify(P)} ${JSON.stringify(F)}\n評估：${yes.map(r=>r.name+"("+r.st+")").join("、")}`);
+  if(ll){ reply=ll; await trace("🤖","LLM 改寫回覆語氣","只改語氣，不改結論"); }
+  msg(reply);
+  $("#results").style.display="block";
+  setTimeout(()=>$("#results").scrollIntoView({behavior:"smooth"}),300);
+}
+
+function card(r){
+  const lab={likely:["很可能符合","b-likely"],check:["值得申請・需確認","b-check"],no:["目前不符合","b-no"],urgent:["優先處理","b-urgent"]}[r.st];
+  return `<div class="prog ${r.st}"><h3>${r.name}<span class="badge ${lab[1]}">${lab[0]}</span></h3><p>${r.why}</p>${r.calc?`<div class="calc">${r.calc}</div>`:""}${r.st!=="no"?`<p>🎁 ${r.benefit}</p><p class="how">📍 ${r.how}</p>${r.docs.length?`<details><summary>要準備的文件</summary><ul>${r.docs.map(d=>`<li>${d}</li>`).join("")}</ul></details>`:""}<p style="margin:4px 0 0"><a href="${r.link}" target="_blank" rel="noopener">官方資訊 ↗</a></p>`:""}</div>`;
+}
+function render(res){
+  const order={urgent:0,likely:1,check:2,no:3};
+  res.sort((a,b)=>order[a.st]-order[b.st]);
+  $("#cards").innerHTML=res.filter(r=>r.st!=="no").map(card).join("")||`<div class="card">目前沒有明顯符合的項目。建議撥 1957 福利諮詢專線，請專人依完整資料判斷。</div>`;
+  $("#cardsNo").innerHTML=res.filter(r=>r.st==="no").map(card).join("")||`<div class="empty">沒有</div>`;
+  const P=state.P,c=CITY[P.city||"other"];
+  const pc=(P.income!=null&&P.size)?P.income/P.size:null;
+  $("#summary").innerHTML=`<b>${c.name}</b>・家戶 ${P.size??"?"} 人・月收入 ${P.income!=null?fmt(P.income):"?"} 元${pc!=null?`・<b>每人每月 ${fmt(pc)} 元</b>`:""}<br>
+  <span style="color:var(--muted);font-size:.88rem">對照 115 年門檻：最低生活費 ${fmt(c.min)}｜中低收 ${fmt(c.mid)}｜2.5 倍 ${fmt(c.min*2.5)}｜租補（3 倍）${fmt(c.rent3)}</span><br>
+  ✅ 很可能符合 <b>${res.filter(r=>r.st==="likely").length}</b> 項　🟡 需確認 <b>${res.filter(r=>r.st==="check").length}</b> 項　🔴 優先處理 <b>${res.filter(r=>r.st==="urgent").length}</b> 項`;
+  // 行動清單
+  const steps=[];
+  if(state.risk.includes("self")) steps.push("現在撥 1925 安心專線（24 小時免費），有立即危險撥 119／110。");
+  if(state.risk.includes("violence")) steps.push("現在撥 113 保護專線；有立即危險撥 110。");
+  res.filter(r=>r.st==="urgent"&&r.id!=="protect").forEach(r=>steps.push(`【今天】${r.name}：${r.how}`));
+  const lw=res.find(r=>r.id==="lowinc"&&r.st!=="no"); if(lw) steps.push(`【本週】到戶籍地區公所社會課申請低收／中低收資格審核（帶：${lw.docs.slice(1,4).join("、")}）。拿到資格後很多補助會跟著變簡單。`);
+  res.filter(r=>r.st!=="no"&&!["urgent","lowinc","protect"].includes(r.id)).forEach(r=>steps.push(`${r.name}：${r.how}`));
+  steps.push("不確定的地方，撥 1957 福利諮詢專線，把這份清單唸給專員聽。");
+  $("#plan").innerHTML=steps.map(s=>`<li>${s}<input type="checkbox" onchange="this.parentNode.classList.toggle('done',this.checked)"></li>`).join("");
+  renderML(); renderHandoff();
+}
+function renderML(){
+  const L=$("#lang").value, d=I18N[L]; const res=state.results.filter(r=>r.st!=="no");
+  const nm=r=> L==="zh"?r.name:(PN[r.id]?.[L]||r.name);
+  const lb={likely:d.l,check:d.c,urgent:d.u};
+  $("#mlcard").innerHTML=`<b style="font-size:1.1rem">🪪 ${d.t}</b><br>${d.lead}<ul>${res.map(r=>`<li>${nm(r)} — <i>${lb[r.st]}</i></li>`).join("")}</ul><b>☎ ${d.hot}</b>`;
+}
+function renderHandoff(){
+  const P=state.P,F=state.F,c=CITY[P.city||"other"],res=state.results;
+  const tags=FLAGS.filter(([k])=>F[k]).map(([,l])=>l.replace(/^\S+\s/,"")).join("、")||"無";
+  const pc=(P.income!=null&&P.size)?fmt(P.income/P.size):"未知";
+  $("#handoff").textContent=
+`【福利領航員・初篩交接摘要】產生時間：${new Date().toLocaleString("zh-TW")}
+一、主訴（使用者原話）：${state.raw.trim().slice(0,160)}${state.raw.trim().length>160?"…":""}
+二、基本資料：${c.name}｜家戶 ${P.size??"?"} 人｜本人年齡 ${P.age??"?"}｜子女 ${P.kids??"?"} 名
+三、經濟狀況：家戶月收入 ${P.income!=null?fmt(P.income):"?"} 元，每人每月 ${pc} 元；房租 ${P.rentAmt!=null?fmt(P.rentAmt):"—"}；存款 ${P.deposit!=null?fmt(P.deposit):"未提供"}
+四、身分／事件標記：${tags}
+五、風險：${state.risk.length?state.risk.map(r=>r==="self"?"自傷風險（已提供1925）":"暴力風險（已提供113）").join("、"):"未偵測到"}
+六、初步評估：
+${res.filter(r=>r.st!=="no").map(r=>`  - ${r.name}：${({likely:"很可能符合",check:"需確認",urgent:"優先處理"})[r.st]}`).join("\n")||"  - 無明顯符合項目"}
+七、待確認：${P.deposit==null?"動產／不動產、":""}實際所得（以財稅資料為準）、戶籍與共同生活成員
+※ 本摘要為 AI 初篩結果，非正式審核。`;
+}
+
+/* ================= 事件 ================= */
+$("#send").onclick=()=>handleUser($("#inp").value);
+$("#inp").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();handleUser($("#inp").value)}});
+$("#rerun").onclick=async()=>{ await trace("↻","使用者修改個案檔","以修改後的資料重新評估"); state.awaiting=null; await finish(); };
+$("#lang").onchange=renderML;
+$("#bigBtn").onclick=()=>document.body.classList.toggle("big");
+$("#setBtn").onclick=()=>{const s=$("#settings");s.style.display=s.style.display==="block"?"none":"block"};
+$("#apiKey").oninput=()=>{$("#modeBadge").textContent=$("#apiKey").value.trim()?"目前：LLM 理解＋規則計算（混合模式）":"目前：本機規則引擎（免金鑰、資料不外傳）"};
+$("#copyHO").onclick=()=>{navigator.clipboard?.writeText($("#handoff").textContent);$("#copyHO").textContent="✔ 已複製";setTimeout(()=>$("#copyHO").textContent="📋 複製",1500)};
+$("#dl").onclick=()=>{const t="福利領航員・我的行動清單\n\n"+[...document.querySelectorAll("#plan li")].map((l,i)=>`${i+1}. ${l.textContent}`).join("\n")+"\n\n"+$("#handoff").textContent;const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([t],{type:"text/plain"}));a.download="福利行動清單.txt";a.click()};
+$("#speak").onclick=()=>{ if(!("speechSynthesis" in window)) return alert("此瀏覽器不支援朗讀"); speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance([...document.querySelectorAll("#plan li")].map((l,i)=>`第${i+1}步，${l.textContent}`).join("。")); u.lang="zh-TW"; u.rate=.95; speechSynthesis.speak(u); };
+$("#mic").onclick=()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return alert("此瀏覽器不支援語音輸入（建議使用 Chrome）"); const r=new SR(); r.lang="zh-TW"; r.onresult=e=>{$("#inp").value+=e.results[0][0].transcript}; r.start(); $("#mic").textContent="⏺"; r.onend=()=>$("#mic").textContent="🎤";};
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));t.classList.add("on");$("#tab-app").style.display=t.dataset.tab==="app"?"block":"none";$("#tab-about").style.display=t.dataset.tab==="about"?"block":"none"});
+function reset(){Object.assign(state,{P:{},F:{},risk:[],raw:"",awaiting:null,results:[],asked:new Set()});$("#chat").innerHTML="";$("#trace").innerHTML='<li class="empty">代理人準備好了。</li>';$("#results").style.display="none";renderProfile();}
+DEMOS.forEach(([l,t])=>{const b=document.createElement("button");b.className="demo";b.textContent=l;b.onclick=()=>{reset();greet();handleUser(t)};$("#demos").appendChild(b)});
+function greet(){msg("你好，我是福利領航員 🧭\n用自己的話說說遇到的困難就好──住哪裡、家裡幾個人、收入大概多少、有沒有長輩小孩要照顧。我會幫你找出可能申請的補助，並把計算過程攤開給你看。\n（也可以點上面的範例試試看）")}
+renderProfile(); greet();
+</script>
+</body>
+</html>
